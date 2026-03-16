@@ -4,6 +4,9 @@ A high-performance, AI-driven Forex trading bot optimized for **EGM Securities**
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FGesi12340%2Fforex-tool&root-directory=frontend)
 
+**Shareable Link**: [https://forextool.vercel.app](https://forextool.vercel.app)
+*(If the link above is not yet active, click the Deploy button once as a one-time setup)*
+
 ## 🌟 Features
 - **MT5 Integration**: Connects directly to MetaTrader 5 (EGM Securities, FXPesa, etc.).
 - **AI Moonshot Strategy**: Dynamic ADX/RSI trend detection for 10x-50x profit targets.
