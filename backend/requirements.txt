@@ -1,0 +1,9 @@
+flask
+flask-cors
+python-dotenv
+pandas
+numpy
+xgboost
+scikit-learn
+requests
+MetaTrader5
