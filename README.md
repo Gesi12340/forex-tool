@@ -26,10 +26,8 @@ The trading logic must run on a PC with MetaTrader 5 installed.
 4. Start the bot: `python backend/api.py`
 
 ### 3. Connect the Two
-To let the website talk to your local bot, use **ngrok**:
-1. Run `ngrok http 5000`.
-2. Copy the `https://...` link ngrok gives you.
-3. Paste that link into the **Backend Connection** box on your Vercel website.
+The dashboard and the local bot are securely connected via a **Cloud Relay**. NO ngrok or manual tunnel configuration is required.
+As long as you start the bot (`python backend/api.py`), your dashboard will automatically sync and can control your local bot.
 
 ---
 **Developed by Gesi12340**

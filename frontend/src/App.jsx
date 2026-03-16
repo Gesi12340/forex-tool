@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
+const RELAY_ID = "e6b7d9b9f0a2d4c3e1b8"; // Hardcoded to match the backend
+const CLOUD_URL = `https://api.npoint.io/${RELAY_ID}`;
+
 const App = () => {
   const [stats, setStats] = useState({ balance: 0, equity: 0, dailyPnL: 0, drawdown: 0, is_trained: false });
   const [isRunning, setIsRunning] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [apiUrl, setApiUrl] = useState(localStorage.getItem('trading_api_url') || '');
   const [depositPhone, setDepositPhone] = useState('');
   const [depositAmount, setDepositAmount] = useState('');
   const [depositStatus, setDepositStatus] = useState('');
@@ -14,63 +16,83 @@ const App = () => {
     Array.from({ length: 20 }, (_, i) => ({ time: i, price: 1.0850 + Math.random() * 0.005 }))
   );
 
-  const getBase = () => apiUrl.trim();
-
-  const fetchStats = async () => {
-    if (!getBase()) return;
+  const fetchState = async () => {
     try {
-      const res = await fetch(`${getBase()}/api/stats`);
+      const res = await fetch(CLOUD_URL);
       const data = await res.json();
-      setStats(data);
-      setConnected(true);
-      setChartData(prev => {
-        const next = [...prev.slice(-19), { time: Date.now(), price: data.equity || data.balance || 1.085 }];
-        return next;
-      });
+      
+      if (data && data.stats) {
+        setStats(data.stats);
+        setIsRunning(data.stats.is_running || false);
+        setConnected(true);
+        setChartData(prev => {
+          const next = [...prev.slice(-19), { time: Date.now(), price: data.stats.equity || data.stats.balance || 1.085 }];
+          return next;
+        });
+      }
+      
+      if (data && data.status) {
+          // If there's a status message from the backend, we can show it here
+          if (data.status.includes("SUCCESS") || data.status.includes("ERROR")) {
+              setDepositStatus(data.status);
+          }
+      }
     } catch {
       setConnected(false);
     }
   };
 
+  const sendCommand = async (actionObj) => {
+    try {
+      // First get current state so we don't accidentally wipe it
+      const res = await fetch(CLOUD_URL);
+      const current = await res.json();
+      
+      // Inject command
+      const payload = {
+        ...current,
+        command: actionObj
+      };
+      
+      await fetch(CLOUD_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      return true;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  };
+
   useEffect(() => {
-    fetchStats();
-    const iv = setInterval(fetchStats, 5000);
+    fetchState();
+    const iv = setInterval(fetchState, 3000);
     return () => clearInterval(iv);
-  }, [apiUrl]);
+  }, []);
 
   const handleStart = async () => {
     setIsLoading(true);
-    try {
-      const res = await fetch(`${getBase()}/api/start`, { method: 'POST' });
-      const data = await res.json();
-      if (data.status === 'STARTED' || data.status === 'ALREADY_RUNNING') setIsRunning(true);
-    } catch { alert('Failed to start — check your tunnel URL'); }
+    const ok = await sendCommand({ action: "START" });
+    if (!ok) alert('Failed to send Start command via Cloud Relay');
     setIsLoading(false);
   };
 
   const handleStop = async () => {
-    try {
-      await fetch(`${getBase()}/api/stop`, { method: 'POST' });
-      setIsRunning(false);
-    } catch { alert('Failed to stop'); }
+    setIsLoading(true);
+    const ok = await sendCommand({ action: "STOP" });
+    if (!ok) alert('Failed to send Stop command via Cloud Relay');
+    setIsLoading(false);
   };
 
   const handleDeposit = async () => {
     if (!depositPhone || !depositAmount) { setDepositStatus('Please enter phone and amount'); return; }
     setIsLoading(true);
-    setDepositStatus('Sending STK Push...');
-    try {
-      const res = await fetch(`${getBase()}/api/deposit/mpesa`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: depositPhone, amount: depositAmount })
-      });
-      const data = await res.json();
-      setDepositStatus(data.status === 'SUCCESS'
-        ? `STK Push sent to ${depositPhone}! Check your phone.`
-        : `Error: ${data.message}`);
-    } catch {
-      setDepositStatus('Failed — ensure your tunnel URL is connected');
+    setDepositStatus('Sending Command directly to Trading Bot...');
+    const ok = await sendCommand({ action: "DEPOSIT", phone: depositPhone, amount: depositAmount });
+    if (!ok) {
+        setDepositStatus('Failed to send deposit command.');
     }
     setIsLoading(false);
   };
@@ -94,31 +116,16 @@ const App = () => {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 style={styles.title}>AI TRADER PRO — KENYA</h1>
+          <h1 style={styles.title}>AI TRADER PRO — KENYA (CLOUD SYNC)</h1>
           <p style={styles.subtitle}>
             <span style={styles.connDot(connected)} />
-            {connected ? 'Live Connection Active' : 'Not Connected — Enter Tunnel URL Below'}
+            {connected ? 'Cloud Relay Active — Synced' : 'Connecting to Cloud Relay...'}
           </p>
         </div>
         <div style={{ ...styles.card, padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <span style={{ width: 10, height: 10, borderRadius: '50%', background: isRunning ? '#10b981' : '#6b7280', display: 'inline-block' }} />
           <span style={{ fontWeight: 700 }}>{isRunning ? 'BOT RUNNING' : 'STANDBY'}</span>
         </div>
-      </div>
-
-      {/* Tunnel URL */}
-      <div style={{ ...styles.card, marginTop: '1.25rem' }}>
-        <p style={{ ...styles.statLabel, marginBottom: '0.5rem' }}>Backend Tunnel URL (required to connect)</p>
-        <input
-          style={styles.input}
-          type="text"
-          placeholder="Paste your ngrok URL here — e.g. https://abc123.ngrok.io"
-          value={apiUrl}
-          onChange={(e) => { setApiUrl(e.target.value); localStorage.setItem('trading_api_url', e.target.value); }}
-        />
-        <p style={{ color: '#9ca3af', fontSize: '0.78rem', margin: 0 }}>
-          Start your bot with <code>python backend/api.py</code>, then run <code>ngrok http 5000</code> and paste the link above.
-        </p>
       </div>
 
       {/* Stats */}
@@ -157,11 +164,11 @@ const App = () => {
           <div style={styles.card}>
             <h3 style={{ margin: '0 0 1rem', fontWeight: 700 }}>Trading Controls</h3>
             {!isRunning
-              ? <button style={styles.btn('#10b981')} onClick={handleStart} disabled={isLoading || !getBase()}>
-                  {isLoading ? 'Starting...' : '▶ START AUTO-TRADING'}
+              ? <button style={styles.btn('#10b981')} onClick={handleStart} disabled={isLoading || !connected}>
+                  {isLoading ? 'Sending...' : '▶ START AUTO-TRADING'}
                 </button>
-              : <button style={styles.btn('#ef4444')} onClick={handleStop}>
-                  ⏹ STOP TRADING
+              : <button style={styles.btn('#ef4444')} onClick={handleStop} disabled={isLoading}>
+                  {isLoading ? 'Stopping...' : '⏹ STOP TRADING'}
                 </button>
             }
             <p style={{ ...styles.statLabel, textAlign: 'center', marginTop: '0.5rem' }}>
@@ -186,11 +193,11 @@ const App = () => {
               value={depositAmount}
               onChange={e => setDepositAmount(e.target.value)}
             />
-            <button style={styles.btn('#f59e0b')} onClick={handleDeposit} disabled={isLoading}>
-              {isLoading ? 'Sending...' : 'DEPOSIT NOW (M-Pesa)'}
+            <button style={styles.btn('#f59e0b')} onClick={handleDeposit} disabled={isLoading || !connected}>
+              {isLoading ? 'Sending Request...' : 'DEPOSIT NOW (M-Pesa)'}
             </button>
             {depositStatus && (
-              <p style={{ fontSize: '0.85rem', marginTop: '0.5rem', color: depositStatus.startsWith('Error') ? '#ef4444' : '#10b981' }}>
+              <p style={{ fontSize: '0.85rem', marginTop: '0.5rem', color: depositStatus.includes('SUCCESS') ? '#10b981' : '#ef4444' }}>
                 {depositStatus}
               </p>
             )}
@@ -218,3 +225,4 @@ const App = () => {
 };
 
 export default App;
+
