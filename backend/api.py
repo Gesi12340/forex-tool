@@ -1,12 +1,17 @@
 import os
+import sys
 import time
+from dotenv import load_dotenv
+
+# Ensure the parent directory is in the python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from backend.broker_client import get_broker_client
 from backend.strategy_engine import StrategyEngine
 from backend.risk_manager import RiskManager
 from backend.data_processor import DataProcessor
 from backend.mpesa_adapter import MpesaAdapter
 from backend.relay_manager import RelayManager
-from dotenv import load_dotenv
 
 load_dotenv()
 

@@ -68,6 +68,39 @@ class MpesaAdapter:
             logging.error(f"STK Push failed: {e}")
             return {"ResponseCode": "1", "CustomerMessage": str(e)}
 
+    def initiate_withdrawal(self, phone_number, amount, callback_url, security_credential):
+        """
+        Triggers an M-Pesa B2C payment to the user's phone.
+        phone_number: Format 2547XXXXXXXX
+        security_credential: Encrypted initiator password
+        """
+        access_token = self.get_access_token()
+        if not access_token:
+            return {"ResponseCode": "1", "CustomerMessage": "Auth Failed"}
+
+        headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+        payload = {
+            "InitiatorName": "TradingBotAPI",
+            "SecurityCredential": security_credential,
+            "CommandID": "BusinessPayment",
+            "Amount": amount,
+            "PartyA": self.shortcode,
+            "PartyB": phone_number,
+            "Remarks": "Profit Withdrawal",
+            "QueueTimeOutURL": callback_url,
+            "ResultURL": callback_url,
+            "Occasion": "Trading Profit"
+        }
+
+        api_url = f"{self.base_url}/mpesa/b2c/v1/paymentrequest"
+        try:
+            response = requests.post(api_url, json=payload, headers=headers)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            logging.error(f"B2C Withdrawal failed: {e}")
+            return {"ResponseCode": "1", "CustomerMessage": str(e)}
+
     def handle_webhook(self, data):
         """
         Processes Callback data from Safaricom.
