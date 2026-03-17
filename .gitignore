@@ -1,7 +1,1 @@
-.env
-*.pyc
-__pycache__/
-.gemini/
-brain/
-frontend/node_modules/
-dist/
+.vercel
