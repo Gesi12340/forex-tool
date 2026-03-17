@@ -2,6 +2,7 @@ import requests
 import json
 import logging
 import base64
+import os
 from datetime import datetime
 
 class MpesaAdapter:
@@ -10,11 +11,16 @@ class MpesaAdapter:
     Securely handles deposits via STK Push.
     """
     def __init__(self, consumer_key, consumer_secret, shortcode, passkey, env="sandbox"):
-        self.base_url = "https://sandbox.safaricom.co.ke" if env == "sandbox" else "https://api.safaricom.co.ke"
+        self.env = env.lower()
+        self.base_url = "https://sandbox.safaricom.co.ke" if self.env == "sandbox" else "https://api.safaricom.co.ke"
         self.consumer_key = consumer_key
         self.consumer_secret = consumer_secret
-        self.shortcode = shortcode
+        self.shortcode = str(shortcode)
         self.passkey = passkey
+        
+        # Critical Sandbox Warning
+        if self.env == "sandbox" and self.shortcode != "174379":
+            print(f"!!! [MPESA WARNING] !!!\nYou are in SANDBOX mode but using Shortcode: {self.shortcode}.\nSafaricom Sandbox ONLY supports STK Push with Shortcode: 174379.\nPlease update your .env to use 174379 for testing.")
 
     def get_access_token(self):
         """Retrieves OAuth2 access token from Safaricom API."""
@@ -27,45 +33,66 @@ class MpesaAdapter:
             logging.error(f"Failed to get M-Pesa access token: {e}")
             return None
 
+    def format_phone(self, phone):
+        """Formats phone to 2547XXXXXXXX."""
+        phone = str(phone).strip().replace("+", "")
+        if phone.startswith("0"):
+            return "254" + phone[1:]
+        elif phone.startswith("7") or phone.startswith("1"):
+            return "254" + phone
+        return phone
+
     def initiate_stk_push(self, phone_number, amount, account_reference, callback_url, transaction_type="CustomerBuyGoodsOnline"):
         """
-        Triggers an M-Pesa STK Push to the user's phone.
-        phone_number: Format 2547XXXXXXXX
-        transaction_type: CustomerBuyGoodsOnline (Till) or CustomerPayBillOnline (PayBill)
+        Triggers an M-Pesa STK Push.
         """
         access_token = self.get_access_token()
         if not access_token:
-            return {"ResponseCode": "1", "CustomerMessage": "Authentication Failed. Check Consumer Key and Secret."}
+            print("[MPESA] Auth Failed - No Access Token")
+            return {"ResponseCode": "1", "CustomerMessage": "Auth Failed"}
 
+        phone_number = self.format_phone(phone_number)
+        
+        # Determine transaction type
+        final_transaction_type = transaction_type
+        if len(str(self.shortcode)) >= 8:
+            final_transaction_type = "CustomerPayBillOnline"
+        
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
         password = base64.b64encode(f"{self.shortcode}{self.passkey}{timestamp}".encode()).decode()
         
-        headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json"
+        }
+        
+        # Payload construction - strictly follow Daraja API requirements
         payload = {
-            "BusinessShortCode": self.shortcode,
+            "BusinessShortCode": str(self.shortcode),
             "Password": password,
             "Timestamp": timestamp,
-            "TransactionType": transaction_type,
-            "Amount": amount,
-            "PartyA": phone_number,
-            "PartyB": self.shortcode, # For BuyGoods, this is the Till Number
-            "PhoneNumber": phone_number,
+            "TransactionType": final_transaction_type,
+            "Amount": int(float(amount)),
+            "PartyA": str(phone_number),
+            "PartyB": str(self.shortcode), 
+            "PhoneNumber": str(phone_number),
             "CallBackURL": callback_url,
-            "AccountReference": account_reference,
-            "TransactionDesc": "Trading Account Deposit"
+            "AccountReference": account_reference[:12],
+            "TransactionDesc": "GesiTrade"
         }
 
+        print(f"[MPESA DEBUG] Final Payload: {json.dumps(payload)}")
         api_url = f"{self.base_url}/mpesa/stkpush/v1/processrequest"
         try:
             response = requests.post(api_url, json=payload, headers=headers)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as e:
-            error_details = e.response.json() if e.response else str(e)
-            logging.error(f"STK Push failed: {error_details}")
-            return {"ResponseCode": "1", "CustomerMessage": str(error_details)}
+            res_json = response.json()
+            if response.status_code != 200:
+                print(f"[MPESA ERROR] API returned {response.status_code}: {res_json}")
+            else:
+                print(f"[MPESA SUCCESS] {res_json.get('CustomerMessage')}")
+            return res_json
         except Exception as e:
-            logging.error(f"STK Push failed: {e}")
+            print(f"[MPESA EXCEPTION] {e}")
             return {"ResponseCode": "1", "CustomerMessage": str(e)}
 
     def initiate_withdrawal(self, phone_number, amount, callback_url, security_credential):

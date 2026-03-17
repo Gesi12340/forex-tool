@@ -1,0 +1,8 @@
+backend/
+requirements.txt
+tests/
+scripts/
+.env
+.env.example
+*.py
+*.bat
