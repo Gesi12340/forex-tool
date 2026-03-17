@@ -1,0 +1,7 @@
+MetaTrader5
+requests
+python-dotenv
+pandas
+numpy
+xgboost
+tensorflow
