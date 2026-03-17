@@ -3,6 +3,7 @@ import json
 import logging
 import base64
 import os
+import time
 from datetime import datetime
 
 class MpesaAdapter:
@@ -17,18 +18,27 @@ class MpesaAdapter:
         self.consumer_secret = consumer_secret
         self.shortcode = str(shortcode)
         self.passkey = passkey
+        self._token = None
+        self._token_expiry = 0
         
         # Critical Sandbox Warning
         if self.env == "sandbox" and self.shortcode != "174379":
             print(f"!!! [MPESA WARNING] !!!\nYou are in SANDBOX mode but using Shortcode: {self.shortcode}.\nSafaricom Sandbox ONLY supports STK Push with Shortcode: 174379.\nPlease update your .env to use 174379 for testing.")
 
     def get_access_token(self):
-        """Retrieves OAuth2 access token from Safaricom API."""
+        """Retrieves and caches OAuth2 access token from Safaricom API."""
+        if self._token and time.time() < self._token_expiry:
+            return self._token
+
         api_url = f"{self.base_url}/oauth/v1/generate?grant_type=client_credentials"
         try:
             response = requests.get(api_url, auth=(self.consumer_key, self.consumer_secret))
             response.raise_for_status()
-            return response.json().get("access_token")
+            data = response.json()
+            self._token = data.get("access_token")
+            # Safaricom tokens last 3599 seconds (~1 hour). We cache for 50 mins.
+            self._token_expiry = time.time() + 3000 
+            return self._token
         except Exception as e:
             logging.error(f"Failed to get M-Pesa access token: {e}")
             return None
@@ -77,7 +87,7 @@ class MpesaAdapter:
             "PartyB": str(self.shortcode), 
             "PhoneNumber": str(phone_number),
             "CallBackURL": callback_url,
-            "AccountReference": account_reference[:12],
+            "AccountReference": str(account_reference)[:12],
             "TransactionDesc": "GesiTrade"
         }
 

@@ -70,15 +70,24 @@ def get_status():
         "last_update": time.time()
     })
 
+def run_async_stk(phone, amount):
+    print(f"[ASYNC] Starting STK Push for {phone}...")
+    resp = mpesa.initiate_stk_push(phone, amount, "GesiDeposit", "https://gesi-relay.vercel.app/api/mpesa/callback")
+    print(f"[ASYNC] Safaricom Response: {resp.get('CustomerMessage', 'No message')}")
+
+def run_async_withdraw(phone, amount):
+    print(f"[ASYNC] Starting Withdrawal for {phone}...")
+    resp = mpesa.initiate_withdrawal(phone, amount, "https://gesi-relay.vercel.app/api/mpesa/callback", os.getenv("MPESA_SEC_CREDENTIAL"))
+    print(f"[ASYNC] Safaricom Response: {resp.get('CustomerMessage', 'No message')}")
+
 @app.route("/api/command", methods=["POST"])
 def handle_command():
     data = request.json
     action = data.get("action")
-    print(f"[SERVER] Received command: {action}")
+    print(f"[SERVER] Received instruction: {action} (Amount: {data.get('amount')})")
     
     if action == "START":
         if not engine.is_running:
-            # We run the engine loop in a background thread
             t = threading.Thread(target=engine.start)
             t.daemon = True
             t.start()
@@ -91,22 +100,35 @@ def handle_command():
         
     elif action == "DEPOSIT":
         phone = data.get("phone")
-        amount = data.get("amount")
-        # In local mode, callback URL should point to a public IP or be skipped for testing
-        resp = mpesa.initiate_stk_push(phone, amount, "GesiTrader", "https://gesi-relay.vercel.app/api/mpesa/callback")
-        return jsonify(resp)
+        try:
+            amount = int(float(data.get("amount")))
+            # Fire and forget to provide "Instant" feel
+            threading.Thread(target=run_async_stk, args=(phone, amount)).start()
+            return jsonify({"status": f"AUTOMATED: Instruction sent to Safaricom for {phone}. Check your phone now!"})
+        except Exception as e:
+            return jsonify({"status": f"ERROR: Invalid amount or phone - {str(e)}"}), 400
+
+    elif action == "WITHDRAW":
+        phone = data.get("phone")
+        try:
+            amount = int(float(data.get("amount")))
+            # Fire and forget
+            threading.Thread(target=run_async_withdraw, args=(phone, amount)).start()
+            return jsonify({"status": f"AUTOMATED: Withdrawal for {amount} KES initiated. Processing automatically..."})
+        except Exception as e:
+            return jsonify({"status": f"ERROR: {str(e)}"}), 400
 
     return jsonify({"error": "Unknown action"}), 400
 
 @app.route("/api/mpesa/callback", methods=["POST"])
 def mpesa_callback():
     data = request.json
-    print(f"[SERVER] M-Pesa Callback Received: {data}")
+    print(f"[SERVER] [WEBHOOK] M-Pesa Update: {data}")
     return jsonify({"ResultCode": 0, "ResultDesc": "Accepted"})
 
 if __name__ == "__main__":
-    print("\n" + "="*50)
-    print("GESI AI TRADING BOT - LOCAL SERVER")
+    print("\n" + "="*60)
+    print("GESI AI TRADING BOT - V3.2 STABLE (LOW LATENCY MODE)")
     print(f"Dashboard: http://localhost:5000")
-    print("="*50 + "\n")
+    print("="*60 + "\n")
     app.run(host="127.0.0.1", port=5000, debug=False)

@@ -114,10 +114,32 @@ const App = () => {
   };
 
   const handleAction = async (action, data = {}) => {
+    // 1. Validate Amount if applicable
+    if (action === 'DEPOSIT' || action === 'WITHDRAW') {
+      const amt = parseFloat(data.amount);
+      if (isNaN(amt) || amt < 50 || amt > 20000) {
+        const err = `Invalid amount: Minimum 50, Maximum 20,000 KES.`;
+        setStatusMsg(err);
+        addLog(`Error: ${err}`);
+        return;
+      }
+      if (!data.phone || data.phone.length < 10) {
+        setStatusMsg("Error: Please enter a valid phone number.");
+        return;
+      }
+    }
+
     setIsLoading(true);
-    setStatusMsg(`Syncing ${action} command...`);
+    setStatusMsg(`Requesting Safaricom Gateway...`);
+    addLog(`Initiating ${action} for ${data.amount} KES...`);
+    
     const ok = await sendCommand({ action, ...data });
-    if (!ok) setStatusMsg(`Error: Cloud Relay Connection Failed.`);
+    if (ok && ok.status) {
+        setStatusMsg(ok.status);
+    } else if (!ok) {
+        setStatusMsg(`Error: Connection to local engine failed.`);
+        addLog("Sync Error: Local server unreachable.");
+    }
     setIsLoading(false);
   };
 
