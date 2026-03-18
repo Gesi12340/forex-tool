@@ -3,7 +3,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { Play, Square, CreditCard, ArrowUpRight, Shield, Zap, Globe, TrendingUp } from 'lucide-react';
 
 const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const API_BASE = IS_LOCAL ? '' : 'https://jsonblob.com/api/jsonBlob/019cff51-9acf-75cc-9685-304ab695d7a7';
+const API_BASE = '/api';
 
 const App = () => {
   const [stats, setStats] = useState({ 
@@ -22,7 +22,7 @@ const App = () => {
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [statusMsg, setStatusMsg] = useState('');
   const [connected, setConnected] = useState(false);
-  const [relayActive, setRelayActive] = useState(false);
+  const [relayActive, setRelayActive] = useState(true); // Always true for local
   const [lastUpdate, setLastUpdate] = useState(0);
   const [chartData, setChartData] = useState(
     Array.from({ length: 40 }, (_, i) => ({ time: i, price: 1.08502 + Math.random() * 0.0005 }))
@@ -35,68 +35,42 @@ const App = () => {
 
   const fetchState = async () => {
     try {
-      const url = IS_LOCAL ? '/api/status' : API_BASE;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      const res = await fetch(`${API_BASE}/stats`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       
-      if (data && data.stats) {
-        setStats(data.stats);
-        setIsRunning(data.stats.is_running || false);
+      if (data) {
+        setStats(data);
+        setIsRunning(data.is_running || false);
         setConnected(true);
+        setStatusMsg(data.status_msg || "");
         
-        // Track Relay Activity
-        const ts = data.last_update || 0;
-        setLastUpdate(ts);
-        const isActive = (Date.now() / 1000) - ts < 60;
-        setRelayActive(isActive);
-        
-        if (!isActive) {
-           addLog("Warning: Local Relay is offline/timed out.");
-        }
-
-        const livePrice = data.stats.market_price || 0;
+        const livePrice = data.market_price || 0;
         if (livePrice > 0) {
           setChartData(prev => {
             const next = [...prev.slice(-39), { time: new Date().toLocaleTimeString(), price: livePrice }];
             return next;
           });
         }
-      } else {
-        setConnected(true); 
       }
     } catch (err) {
       setConnected(false);
-      setRelayActive(false);
-      const errMsg = `Relay Connection Error: ${err.message}`;
-      setStatusMsg(errMsg);
+      const errMsg = `Local Engine Error: Offline`;
       addLog(errMsg);
     }
   };
 
   const sendCommand = async (actionObj) => {
     try {
-      if (IS_LOCAL) {
-        const res = await fetch('/api/command', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(actionObj)
-        });
-        return res.ok;
-      } else {
-        const res = await fetch(API_BASE);
-        const current = await res.json() || {};
-        const payload = { ...current, command: actionObj };
-        await fetch(API_BASE, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        return true;
-      }
+      const res = await fetch(`${API_BASE}/action`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(actionObj)
+      });
+      return await res.json();
     } catch (e) {
       addLog(`Send Error: ${e.message}`);
-      return false;
+      return null;
     }
   };
 

@@ -5,3 +5,5 @@ pandas
 numpy
 xgboost
 tensorflow
+Flask
+Flask-Cors
