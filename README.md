@@ -2,7 +2,7 @@
 
 A high-performance, AI-driven Forex trading bot optimized for **EGM Securities** and integrated with **M-Pesa** for autonomous deposits and hyper-growth trading.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FGesi12340%2Fforex-tool&root-directory=frontend)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FGesi12340%2Fforex-tool)
 
 **Premium Dashboard V4.0**: [https://forex-tool-6zbw.vercel.app](https://forex-tool-6zbw.vercel.app)
 **Vercel Project Link**: [https://forextool.vercel.app](https://forextool.vercel.app)
