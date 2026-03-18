@@ -3,7 +3,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { Play, Square, CreditCard, ArrowUpRight, Shield, Zap, Globe, TrendingUp } from 'lucide-react';
 
 const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const API_BASE = IS_LOCAL ? '' : 'https://jsonblob.com/api/jsonBlob/019cfb6a-5670-7f08-b572-eb65ed439b6f';
+const API_BASE = IS_LOCAL ? '' : 'https://jsonblob.com/api/jsonBlob/019cff51-9acf-75cc-9685-304ab695d7a7';
 
 const App = () => {
   const [stats, setStats] = useState({ 
@@ -146,31 +146,37 @@ const App = () => {
   return (
     <div className="premium-container">
       {/* Header */}
-      <div className="header-section">
+      <div className="header-section glass-panel" style={{ background: 'rgba(16, 185, 129, 0.05)', marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           <div className="logo-text">
-            <Zap size={32} fill="#10b981" />
-            GESI AI PRO
+            <Zap size={32} fill="var(--accent-primary)" />
+            GESI AI PREMIUM V4.0
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginTop: '0.5rem' }}>
-            <div className={connected ? "live-indicator" : ""} style={{ background: connected ? '#10b981' : '#ef4444' }} />
+          <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', margin: '0.25rem 0' }}>The Ultimate Automated Forex Engine</p>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <div className={connected ? "live-indicator" : ""} style={{ background: connected ? 'var(--accent-primary)' : '#ef4444' }} />
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ color: '#8b949e', fontSize: '0.85rem', fontWeight: 500 }}>
+              <span style={{ color: 'var(--text-dim)', fontSize: '0.85rem', fontWeight: 600 }}>
                 {!connected ? 'CLOUD OFFLINE' : (!relayActive ? 'WAITING FOR LOCAL RELAY...' : 'FULLY OPERATIONAL')}
-                </span>
-                <button 
+              </span>
+              <button 
                 onClick={manualSync} 
-                style={{ background: 'transparent', border: 'none', color: '#10b981', fontSize: '0.65rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: 0, opacity: 0.7 }}
+                style={{ background: 'transparent', border: 'none', color: 'var(--accent-primary)', fontSize: '0.65rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: 0 }}
                 disabled={isLoading}
-                >
-                <Zap size={8} fill={connected ? "#10b981" : "transparent"} />
+              >
+                <Zap size={10} fill={connected ? "var(--accent-primary)" : "transparent"} />
                 {connected ? 'MANUAL RE-SYNC' : 'RETRY CONNECTION'}
-                </button>
+              </button>
             </div>
           </div>
         
-        <div className={`status-badge ${!isRunning ? 'standby' : ''}`}>
-          <div className={isRunning ? "live-indicator" : ""} style={{ width: 6, height: 6, opacity: isRunning ? 1 : 0.3 }} />
-          {isRunning ? 'ALGORITHM ACTIVE' : 'ENGINE STANDBY'}
+          <div className={`status-badge ${!isRunning ? 'standby' : ''}`}>
+            <div className={isRunning ? "live-indicator" : ""} style={{ width: 6, height: 6, opacity: isRunning ? 1 : 0.3 }} />
+            {isRunning ? 'ALGORITHM ACTIVE' : 'ENGINE STANDBY'}
+          </div>
         </div>
       </div>
 
@@ -242,28 +248,28 @@ const App = () => {
           </div>
 
           {/* Transfers */}
-          <div className="glass-panel">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
-              <CreditCard size={18} color="#10b981" />
-              <h4 className="stat-label" style={{ margin: 0 }}>M-Pesa Gateway</h4>
+          <div className="glass-panel" style={{ border: '1px solid rgba(255,255,255,0.15)', background: 'linear-gradient(135deg, rgba(13,17,23,0.8), rgba(13,17,23,0.4))' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
+              <CreditCard size={22} color="var(--accent-primary)" />
+              <h4 className="stat-label" style={{ margin: 0, fontSize: '0.9rem', color: '#fff' }}>Gesi Secure Gateway</h4>
             </div>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div style={{ paddingBottom: '1.25rem', borderBottom: '1px solid var(--border-glass)' }}>
-                <span style={{ fontSize: '0.7rem', fontWeight: 800, display: 'block', marginBottom: '0.75rem', color: '#10b981', letterSpacing: '0.5px' }}>AUTOMATED DEPOSIT</span>
-                <input className="premium-input" placeholder="Phone (254...)" value={depositPhone} onChange={e => setDepositPhone(e.target.value)} />
-                <input className="premium-input" placeholder="Amount (KES)" value={depositAmount} onChange={e => setDepositAmount(e.target.value)} />
-                <button className="control-btn btn-primary" style={{ height: '48px', fontSize: '0.9rem' }} onClick={() => handleAction('DEPOSIT', { phone: depositPhone, amount: depositAmount })}>
-                  INITIATE STK PUSH
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div style={{ padding: '1.25rem', borderRadius: '16px', background: 'rgba(0, 255, 136, 0.03)', border: '1px solid rgba(0, 255, 136, 0.1)' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 900, display: 'block', marginBottom: '1rem', color: 'var(--accent-primary)', letterSpacing: '1px' }}>INSTANT DEPOSIT (STK)</span>
+                <input className="premium-input" placeholder="M-Pesa Number (e.g. 2547...)" value={depositPhone} onChange={e => setDepositPhone(e.target.value)} />
+                <input className="premium-input" placeholder="Amount in KES (Min 50)" value={depositAmount} onChange={e => setDepositAmount(e.target.value)} />
+                <button className="control-btn btn-primary" style={{ height: '54px', fontSize: '1rem', boxShadow: '0 0 20px var(--glow-green)' }} onClick={() => handleAction('DEPOSIT', { phone: depositPhone, amount: depositAmount })}>
+                  <Zap size={18} fill="currentColor" /> DEPOSIT NOW
                 </button>
               </div>
 
-              <div>
-                <span style={{ fontSize: '0.7rem', fontWeight: 800, display: 'block', marginBottom: '0.75rem', color: '#f59e0b', letterSpacing: '0.5px' }}>PROFIT WITHDRAWAL</span>
-                <input className="premium-input" placeholder="Phone (254...)" value={withdrawPhone} onChange={e => setWithdrawPhone(e.target.value)} />
-                <input className="premium-input" placeholder="Amount (KES)" value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} />
-                <button className="control-btn btn-withdraw" style={{ height: '48px', fontSize: '0.9rem' }} onClick={() => handleAction('WITHDRAW', { phone: withdrawPhone, amount: withdrawAmount })}>
-                  WITHDRAW TO MPESA
+              <div style={{ padding: '1.25rem', borderRadius: '16px', background: 'rgba(255, 204, 0, 0.03)', border: '1px solid rgba(255, 204, 0, 0.1)' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 900, display: 'block', marginBottom: '1rem', color: 'var(--accent-yellow)', letterSpacing: '1px' }}>INSTANT WITHDRAWAL</span>
+                <input className="premium-input" placeholder="M-Pesa Number" value={withdrawPhone} onChange={e => setWithdrawPhone(e.target.value)} />
+                <input className="premium-input" placeholder="Amount (Profit Only)" value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} />
+                <button className="control-btn btn-withdraw" style={{ height: '54px', fontSize: '1rem', background: 'rgba(255,204,0,0.15)', color: 'var(--accent-yellow)', borderColor: 'var(--accent-yellow)' }} onClick={() => handleAction('WITHDRAW', { phone: withdrawPhone, amount: withdrawAmount })}>
+                  <ArrowUpRight size={18} /> WITHDRAW TO MPESA
                 </button>
               </div>
             </div>

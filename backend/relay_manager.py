@@ -11,7 +11,7 @@ class RelayManager:
     """
     def __init__(self, engine, mpesa):
         # Using JSONBlob as a more stable alternative to Firebase/npoint
-        self.relay_id = "019cfb6a-5670-7f08-b572-eb65ed439b6f"
+        self.relay_id = "019cff51-9acf-75cc-9685-304ab695d7a7"
         self.api_url = f"https://jsonblob.com/api/jsonBlob/{self.relay_id}"
         self.running = False
         self.engine = engine

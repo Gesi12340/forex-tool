@@ -4,14 +4,15 @@ A high-performance, AI-driven Forex trading bot optimized for **EGM Securities**
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FGesi12340%2Fforex-tool&root-directory=frontend)
 
-**Shareable Link**: [https://forextool.vercel.app](https://forextool.vercel.app)
-*(If the link above is not yet active, click the Deploy button once as a one-time setup)*
+**Premium Dashboard**: [https://forex-tool-6zbw.vercel.app](https://forex-tool-6zbw.vercel.app)
+**Custom Domain**: [https://tool.forex](https://tool.forex)
 
-## 🌟 Features
-- **MT5 Integration**: Connects directly to MetaTrader 5 (EGM Securities, FXPesa, etc.).
-- **AI Moonshot Strategy**: Dynamic ADX/RSI trend detection for 10x-50x profit targets.
-- **Zero-Loss Protection**: Autonomous EMA-based exit logic to protect capital.
-- **M-Pesa Integration**: Automated STK Push for seamless account funding.
+## 🌟 New Premium Features (V3.2)
+- **AI Moonshot Strategy**: Enhanced trend detection (99% confidence threshold) for aggressive 10x-50x growth.
+- **Low-Latency Cloud Relay**: Instant synchronization between web and local bot (no ngrok required).
+- **Automated M-Pesa (Till/Paybill)**: Fully asynchronous STK Push and B2C withdrawals with zero manual intervention.
+- **Zero-Loss Protection**: Dynamic trailing stops and EMA-based "Stop-on-Dip" logic to protect your capital.
+- **Premium UI**: Modern dark-mode dashboard with live market tracking and real-time PnL.
 
 ## 🛠️ Setup for Friends
 
