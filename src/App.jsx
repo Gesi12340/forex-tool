@@ -145,12 +145,12 @@ const App = () => {
 
   return (
     <div className="premium-container">
-      {/* Header */}
-      <div className="header-section glass-panel" style={{ background: 'rgba(16, 185, 129, 0.05)', marginBottom: '2rem' }}>
+      {/* Premium Header */}
+      <div className="glass-panel header-section" style={{ background: 'rgba(0, 255, 136, 0.03)', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <div className="logo-text">
             <Zap size={32} fill="var(--accent-primary)" />
-            GESI AI PREMIUM V4.0
+            <span>GESI AI PREMIUM V4.0</span>
           </div>
           <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', margin: '0.25rem 0' }}>The Ultimate Automated Forex Engine</p>
         </div>
@@ -160,7 +160,7 @@ const App = () => {
             <div className={connected ? "live-indicator" : ""} style={{ background: connected ? 'var(--accent-primary)' : '#ef4444' }} />
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <span style={{ color: 'var(--text-dim)', fontSize: '0.85rem', fontWeight: 600 }}>
-                {!connected ? 'CLOUD OFFLINE' : (!relayActive ? 'WAITING FOR LOCAL RELAY...' : 'FULLY OPERATIONAL')}
+                {!connected ? 'CLOUD OFFLINE' : (!relayActive ? 'WAITING FOR RELAY...' : 'FULLY OPERATIONAL')}
               </span>
               <button 
                 onClick={manualSync} 
