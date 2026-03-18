@@ -16,14 +16,18 @@ class MpesaAdapter:
         self.base_url = "https://sandbox.safaricom.co.ke" if self.env == "sandbox" else "https://api.safaricom.co.ke"
         self.consumer_key = consumer_key
         self.consumer_secret = consumer_secret
-        self.shortcode = str(shortcode)
-        self.passkey = passkey
         self._token = None
         self._token_expiry = 0
         
-        # Critical Sandbox Warning
-        if self.env == "sandbox" and self.shortcode != "174379":
-            print(f"!!! [MPESA WARNING] !!!\nYou are in SANDBOX mode but using Shortcode: {self.shortcode}.\nSafaricom Sandbox ONLY supports STK Push with Shortcode: 174379.\nPlease update your .env to use 174379 for testing.")
+        # Critical Sandbox Overrides
+        if self.env == "sandbox":
+            # Standard Safaricom Sandbox settings
+            self.shortcode = "174379"
+            self.passkey = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
+            print(f"[MPESA] Using standard Safaricom SANDBOX credentials (Shortcode: {self.shortcode})")
+        else:
+            self.shortcode = str(shortcode)
+            self.passkey = passkey
 
     def get_access_token(self):
         """Retrieves and caches OAuth2 access token from Safaricom API."""
@@ -64,9 +68,13 @@ class MpesaAdapter:
         phone_number = self.format_phone(phone_number)
         
         # Determine transaction type
-        final_transaction_type = transaction_type
-        if len(str(self.shortcode)) >= 8:
+        # Standard Sandbox shortcode (174379) MUST use CustomerPayBillOnline
+        if str(self.shortcode) == "174379" or self.env == "sandbox":
             final_transaction_type = "CustomerPayBillOnline"
+        else:
+            final_transaction_type = transaction_type
+            if len(str(self.shortcode)) >= 8:
+                final_transaction_type = "CustomerPayBillOnline"
         
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
         password = base64.b64encode(f"{self.shortcode}{self.passkey}{timestamp}".encode()).decode()
@@ -154,3 +162,32 @@ class MpesaAdapter:
             reason = stk_callback.get('ResultDesc')
             logging.warning(f"Transaction Failed: {reason}")
             return False
+    def query_stk_status(self, checkout_request_id):
+        """
+        Queries Safaricom for the status of an STK push transaction.
+        """
+        access_token = self.get_access_token()
+        if not access_token:
+            return {"ResponseCode": "1", "CustomerMessage": "Auth Failed"}
+
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        password = base64.b64encode(f"{self.shortcode}{self.passkey}{timestamp}".encode()).decode()
+
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json"
+        }
+
+        payload = {
+            "BusinessShortCode": str(self.shortcode),
+            "Password": password,
+            "Timestamp": timestamp,
+            "CheckoutRequestID": checkout_request_id
+        }
+
+        api_url = f"{self.base_url}/mpesa/stkpushquery/v1/query"
+        try:
+            response = requests.post(api_url, json=payload, headers=headers)
+            return response.json()
+        except Exception as e:
+            return {"ResponseCode": "1", "ResultDesc": str(e)}
